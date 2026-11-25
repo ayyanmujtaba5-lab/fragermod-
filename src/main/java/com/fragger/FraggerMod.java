@@ -34,14 +34,14 @@ import java.util.*;
 public class FraggerMod implements ModInitializer {
     public static final String MOD_ID = "fragger";
 
-    // ---- Tweak these ----
-    public static final float ATTACK_DAMAGE = 11.0f;  // extra over the base, ~2.2 hearts vs Diamond+Prot IV
+    public static final float ATTACK_DAMAGE = 11.0f;
     public static final float ATTACK_SPEED = -2.4f;
-    public static final float LASER_DAMAGE = 32.0f;   // 16 hearts naked, ~3 hearts Diamond+Prot IV
+    public static final float LASER_DAMAGE = 32.0f;
     public static final double LASER_RANGE = 30.0;
-    public static final int LASER_COOLDOWN = 20 * 120; // 2 minutes
+    public static final int LASER_COOLDOWN = 20 * 120;
 
     public static Item FRAGGER;
+    public static Item SHADOW_SHIELD;
     private static final Set<UUID> wasSneaking = new HashSet<>();
 
     @Override
@@ -54,9 +54,13 @@ public class FraggerMod implements ModInitializer {
                         .fireproof()
                         .rarity(Rarity.EPIC)));
 
-        ItemGroupEvents.modifyEntriesEvent(ItemGroups.COMBAT).register(e -> e.add(FRAGGER));
+        Identifier shieldId = Identifier.of(MOD_ID, "shadow_shield");
+        RegistryKey<Item> shieldKey = RegistryKey.of(RegistryKeys.ITEM, shieldId);
+        SHADOW_SHIELD = Registry.register(Registries.ITEM, shieldKey, new ShadowShieldItem(
+                new Item.Settings().registryKey(shieldKey).maxDamage(-1).fireproof().rarity(Rarity.EPIC)));
 
-        // Combo ends when the holder gets hit
+        ItemGroupEvents.modifyEntriesEvent(ItemGroups.COMBAT).register(e -> { e.add(FRAGGER); e.add(SHADOW_SHIELD); });
+
         ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, base, taken, blocked) -> {
             FraggerItem.resetCombo(entity.getUuid());
         });
@@ -72,21 +76,27 @@ public class FraggerMod implements ModInitializer {
         return false;
     }
 
+    private static boolean hasShield(ServerPlayerEntity p) {
+        for (int i = 0; i < p.getInventory().size(); i++)
+            if (p.getInventory().getStack(i).isOf(SHADOW_SHIELD)) return true;
+        return false;
+    }
+
     private static void tickPlayer(ServerPlayerEntity p) {
         ServerWorld world = (ServerWorld) p.getEntityWorld();
 
-        // Strength I while Fragger is in the inventory; fades ~2s after losing it
         if (p.age % 20 == 0 && hasFragger(p))
             p.addStatusEffect(new StatusEffectInstance(StatusEffects.STRENGTH, 50, 0, true, false, true));
+
+        if (p.age % 20 == 0 && hasShield(p))
+            p.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, 50, 0, true, false, true));
 
         ItemStack held = p.getMainHandStack();
         boolean holding = held.isOf(FRAGGER);
 
-        // Fire aura around the holder
         if (holding && p.age % 4 == 0)
             world.spawnParticles(ParticleTypes.FLAME, p.getX(), p.getY() + 1.0, p.getZ(), 3, 0.4, 0.6, 0.4, 0.01);
 
-        // Crouch to fire the laser (only on the moment you start crouching)
         boolean sneaking = p.isSneaking();
         boolean justCrouched = sneaking && !wasSneaking.contains(p.getUuid());
         if (sneaking) wasSneaking.add(p.getUuid()); else wasSneaking.remove(p.getUuid());
@@ -107,7 +117,6 @@ public class FraggerMod implements ModInitializer {
                 e -> e instanceof LivingEntity && e != p && !e.isSpectator(), LASER_RANGE * LASER_RANGE);
         if (hit != null) end = hit.getPos();
 
-        // Red + orange beam
         DustParticleEffect red = new DustParticleEffect(0xFF2200, 1.5f);
         DustParticleEffect orange = new DustParticleEffect(0xFF8800, 1.2f);
         double len = start.distanceTo(end);
