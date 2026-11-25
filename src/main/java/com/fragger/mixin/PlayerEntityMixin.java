@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(PlayerEntity.class)
 public class PlayerEntityMixin {
-    @Inject(method = "disableShield", at = @At("HEAD"), cancel = true)
+    @Inject(method = "disableShield", at = @At("HEAD"), cancellable = true)
     private void fragger$noDisable(CallbackInfo ci) {
         PlayerEntity self = (PlayerEntity)(Object)this;
         ItemStack active = self.getActiveItem();
