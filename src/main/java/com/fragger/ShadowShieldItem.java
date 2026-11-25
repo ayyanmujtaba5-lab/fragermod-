@@ -45,13 +45,13 @@ public class ShadowShieldItem extends Item {
     }
 
     private void shockwave(ServerWorld world, ServerPlayerEntity user) {
-        Vec3d c = user.getPos();
+        Vec3d c = user.getEntityPos();
         Box box = new Box(c.x - 5, c.y - 5, c.z - 5, c.x + 5, c.y + 5, c.z + 5);
         List<PlayerEntity> near = world.getEntitiesByClass(PlayerEntity.class, box,
                 pl -> pl != user && pl.isAlive());
 
         for (PlayerEntity target : near) {
-            Vec3d dir = target.getPos().subtract(c);
+            Vec3d dir = target.getEntityPos().subtract(c);
             if (dir.lengthSquared() < 0.01) dir = new Vec3d(1, 0, 0);
             dir = dir.normalize();
             Vec3d knock = new Vec3d(dir.x * 3.2, 1.0, dir.z * 3.2);
