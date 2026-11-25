@@ -1,1 +1,4 @@
-{ "item.fragger.fragger": "Fragger" }
+{
+  "item.fragger.fragger": "Fragger",
+  "item.fragger.shadow_shield": "Shadow Shield"
+}
