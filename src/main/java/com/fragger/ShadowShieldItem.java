@@ -18,7 +18,7 @@ import net.minecraft.world.World;
 import java.util.List;
 
 public class ShadowShieldItem extends Item {
-    public static final int COOLDOWN = 20 * 150; // 2.5 minutes
+    public static final int COOLDOWN = 20 * 150;
 
     public ShadowShieldItem(Settings settings) { super(settings); }
 
@@ -56,7 +56,6 @@ public class ShadowShieldItem extends Item {
             dir = dir.normalize();
             Vec3d knock = new Vec3d(dir.x * 3.2, 1.0, dir.z * 3.2);
             target.setVelocity(knock);
-            target.velocityModified = true;
             if (target instanceof ServerPlayerEntity sp) sp.networkHandler.sendPacket(
                     new net.minecraft.network.packet.s2c.play.EntityVelocityUpdateS2CPacket(sp));
         }
